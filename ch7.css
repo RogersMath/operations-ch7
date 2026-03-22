@@ -1,0 +1,468 @@
+/*
+  ch7.css — Chapter 7 additive styles
+  Extends style.css without modifying it.
+  All contrast ratios maintained per WCAG 2.1 AAA standard.
+*/
+
+/* ── CONCEPT GRID ── */
+.concept-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.concept-card {
+  background: var(--navy-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.4rem;
+  position: relative;
+}
+
+.concept-card-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber-light);   /* 8.06:1 on light — AAA */
+  margin-bottom: 0.6rem;
+}
+
+.concept-card p {
+  font-size: 0.92rem;
+  font-weight: 400;
+  color: var(--text-body);     /* 8.34:1 on light — AAA */
+  line-height: 1.65;
+}
+
+.concept-card strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.concept-card em {
+  color: var(--amber-light);
+  font-style: italic;
+}
+
+/* ── PROCESS DIAGRAM ── */
+.process-diagram {
+  background: var(--navy-code);
+  border: 1px solid rgba(100, 160, 220, 0.18);
+  border-radius: var(--radius);
+  padding: 1.25rem 1rem;
+  margin: 1.25rem 0;
+  overflow-x: auto;
+}
+
+.process-diagram svg {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── QUIZ CONTAINER ── */
+.quiz-container {
+  margin-top: 1.5rem;
+}
+
+/* ── SCOREBOARD ── */
+.quiz-scoreboard {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  background: var(--navy-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.score-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.score-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-body);     /* 8.34:1 — AAA */
+}
+
+.score-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--amber-light);   /* 8.06:1 — AAA */
+  line-height: 1;
+}
+
+.score-divider {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.2rem;
+  color: var(--text-body);
+  opacity: 0.5;
+  align-self: center;
+}
+
+.quiz-reset-btn {
+  margin-left: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-body);     /* AAA */
+  background: var(--navy-mid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.quiz-reset-btn:hover,
+.quiz-reset-btn:focus-visible {
+  color: var(--amber-light);
+  border-color: rgba(232, 160, 32, 0.4);
+  background: rgba(232, 160, 32, 0.08);
+  outline: none;
+}
+.quiz-reset-btn:focus-visible {
+  outline: 3px solid var(--amber-light);
+  outline-offset: 2px;
+}
+
+/* ── QUIZ CARD ── */
+.quiz-card {
+  background: var(--navy-mid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.75rem 1.75rem 1.5rem;
+  min-height: 280px;
+}
+
+/* ── PROGRESS BAR ── */
+.quiz-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-body);     /* AAA */
+}
+
+.progress-bar-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(123, 167, 194, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--amber);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+
+/* ── TYPE BADGE ── */
+.quiz-type-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);         /* 7.25:1 on mid — AAA */
+  margin-bottom: 0.75rem;
+}
+
+/* ── QUESTION ── */
+.quiz-question {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--text-primary);  /* 15.17:1 — AAA */
+  line-height: 1.65;
+  margin-bottom: 1.5rem;
+}
+
+/* ── MULTIPLE CHOICE OPTIONS ── */
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.quiz-option {
+  background: var(--navy-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-body);     /* 8.34:1 — AAA */
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.quiz-option:hover:not(:disabled),
+.quiz-option:focus-visible:not(:disabled) {
+  border-color: rgba(232, 160, 32, 0.4);
+  background: rgba(232, 160, 32, 0.06);
+  color: var(--text-primary);
+  outline: none;
+}
+.quiz-option:focus-visible {
+  outline: 3px solid var(--amber-light);
+  outline-offset: 2px;
+}
+
+.quiz-option .opt-key {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--amber);         /* 7.25:1 — AAA */
+  background: var(--amber-dim);
+  border: 1px solid rgba(232,160,32,0.3);
+  padding: 0.1rem 0.45rem;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.quiz-option.correct {
+  border-color: rgba(109, 219, 160, 0.5);
+  background: rgba(109, 219, 160, 0.08);
+  color: var(--text-green);    /* 7.86:1 — AAA */
+  cursor: default;
+}
+.quiz-option.correct .opt-key {
+  color: var(--text-green);
+  background: rgba(109, 219, 160, 0.15);
+  border-color: rgba(109, 219, 160, 0.4);
+}
+
+.quiz-option.incorrect {
+  border-color: rgba(255, 144, 128, 0.4);
+  background: rgba(255, 144, 128, 0.06);
+  color: var(--text-red);      /* 7.91:1 — AAA */
+  cursor: default;
+}
+.quiz-option.incorrect .opt-key {
+  color: var(--text-red);
+  background: rgba(255, 144, 128, 0.12);
+  border-color: rgba(255, 144, 128, 0.35);
+}
+
+.quiz-option.revealed {
+  border-color: rgba(109, 219, 160, 0.35);
+  background: rgba(109, 219, 160, 0.04);
+  color: var(--text-green);
+  cursor: default;
+}
+
+.quiz-option:disabled { cursor: default; }
+
+/* ── FILL-IN-THE-BLANK ── */
+.quiz-fill-label {
+  display: block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-body);     /* AAA */
+  margin-bottom: 0.6rem;
+}
+
+.quiz-fill-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.quiz-input {
+  flex: 1;
+  background: var(--navy-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.65rem 1rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--text-primary);  /* 15.17:1 — AAA */
+  transition: border-color 0.18s;
+  min-width: 0;
+}
+.quiz-input::placeholder {
+  color: rgba(184, 207, 224, 0.35);
+}
+.quiz-input:focus {
+  outline: 3px solid var(--amber-light);
+  outline-offset: 1px;
+  border-color: var(--amber);
+}
+
+.quiz-input.input-correct {
+  border-color: rgba(109, 219, 160, 0.6);
+  background: rgba(109, 219, 160, 0.06);
+  color: var(--text-green);
+}
+.quiz-input.input-incorrect {
+  border-color: rgba(255, 144, 128, 0.5);
+  background: rgba(255, 144, 128, 0.05);
+  color: var(--text-red);
+}
+
+.quiz-submit-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--navy);
+  background: var(--amber);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.65rem 1.25rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.quiz-submit-btn:hover { background: var(--amber-light); }
+.quiz-submit-btn:focus-visible {
+  outline: 3px solid var(--amber-light);
+  outline-offset: 2px;
+}
+.quiz-submit-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.quiz-fill-hint {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--text-body);     /* AAA */
+  margin-top: 0.4rem;
+  min-height: 1rem;
+}
+
+/* ── FEEDBACK ── */
+.quiz-feedback {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.feedback-verdict {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.feedback-verdict.verdict-correct {
+  color: var(--text-green);    /* 7.86:1 — AAA */
+}
+
+.feedback-verdict.verdict-incorrect {
+  color: var(--text-red);      /* 7.91:1 — AAA */
+}
+
+.feedback-explain {
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--text-body);     /* AAA */
+  line-height: 1.65;
+  margin-bottom: 1.1rem;
+}
+
+.feedback-explain strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.feedback-explain code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--amber-light);   /* AAA */
+  background: rgba(232,160,32,0.1);
+  padding: 0.1rem 0.35rem;
+  border-radius: 2px;
+}
+
+.quiz-next-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--navy);
+  background: var(--amber-light);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.6rem 1.25rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.quiz-next-btn:hover { background: var(--amber); }
+.quiz-next-btn:focus-visible {
+  outline: 3px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+/* ── QUIZ COMPLETE STATE ── */
+.quiz-complete {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.quiz-complete h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.6rem;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.quiz-complete .final-score {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--amber-light);
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.quiz-complete p {
+  color: var(--text-body);
+  font-size: 0.95rem;
+  margin-bottom: 1.25rem;
+}
+
+.quiz-complete .quiz-reset-btn {
+  margin: 0 auto;
+  font-size: 0.85rem;
+  padding: 0.65rem 1.5rem;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  .concept-grid { grid-template-columns: 1fr; }
+  .quiz-scoreboard { gap: 0.75rem; }
+  .quiz-fill-row { flex-direction: column; }
+  .quiz-submit-btn { width: 100%; }
+  .score-value { font-size: 1.2rem; }
+}
