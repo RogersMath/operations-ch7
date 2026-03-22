@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Managing Bottlenecks in Service Processes — Field Guide Ch. 7</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="ch7.css">
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<header>
+  <div class="wrapper">
+    <p class="header-label" aria-label="Chapter 7">Chapter 7</p>
+    <h1>Managing <em>Bottlenecks</em> in<br>Service Processes</h1>
+    <p class="header-sub">How to locate the constraint that limits an entire process, calculate throughput capacity, and reason about parallel vs. sequential resource configurations.</p>
+  </div>
+</header>
+
+<nav aria-label="Jump to topic">
+  <div class="wrapper">
+    <a href="#concepts">01 / Core Concepts</a>
+    <a href="#sequential">02 / Sequential Processes</a>
+    <a href="#parallel">03 / Parallel Resources</a>
+    <a href="#diverging">04 / Diverging Paths</a>
+    <a href="#examples">05 / Worked Examples</a>
+    <a href="#quiz">06 / Formula Practice</a>
+  </div>
+</nav>
+
+<main id="main-content">
+<div class="wrapper">
+
+  <!-- ═══════════════ 01 CORE CONCEPTS ═══════════════ -->
+  <section id="concepts" class="topic-section" aria-labelledby="h-concepts">
+    <div class="section-header">
+      <span class="section-number" aria-hidden="true">01</span>
+      <h2 id="h-concepts">
+        <span class="topic-tag">Foundation</span>
+        Core Concepts
+      </h2>
+    </div>
+
+    <div class="concept-box">
+      <h3>Process Flow Vocabulary</h3>
+      <p>A <strong>process flow</strong> is a network of activities that a customer or unit of work moves through from start to finish. Each activity has a <strong>processing time</strong> — how long it takes to serve one customer. The <strong>bottleneck</strong> is the single activity with the lowest capacity, meaning the highest processing time per server. It limits the throughput of the entire process regardless of how fast every other step runs.</p>
+      <p>Understanding this is the difference between optimizing the right thing and wasting effort speeding up steps that are not the constraint.</p>
+    </div>
+
+    <div class="formula-grid" role="list" aria-label="Core bottleneck formulas">
+      <div class="formula-card" role="listitem">
+        <div class="label">Activity Capacity</div>
+        <div class="formula">Cap = (60 min/hr) ÷ Processing Time</div>
+      </div>
+      <div class="formula-card" role="listitem">
+        <div class="label">Parallel Servers</div>
+        <div class="formula">Cap = Servers × (60 ÷ Time per server)</div>
+      </div>
+      <div class="formula-card" role="listitem">
+        <div class="label">Process Throughput</div>
+        <div class="formula">Throughput = Capacity of Bottleneck</div>
+      </div>
+      <div class="formula-card" role="listitem">
+        <div class="label">Process Flow Time</div>
+        <div class="formula">Flow Time = Sum of all activity times on the path</div>
+      </div>
+    </div>
+
+    <div class="insight" role="note">
+      <span class="icon" aria-hidden="true">◆</span>
+      <p><strong>Bottleneck ≠ slowest step — it's the lowest-capacity step.</strong> Capacity accounts for how many servers are at a step. Two slow servers can outrun one fast server. Always convert processing time to capacity (customers/hour) before comparing steps.</p>
+    </div>
+
+    <div class="concept-grid">
+      <div class="concept-card">
+        <div class="concept-card-label">Flow Time</div>
+        <p>Total time one customer spends in the process from first step to last — also called <em>throughput time</em> or <em>cycle time</em> (per customer). For a sequential process, it's the sum of all activity times on the customer's path.</p>
+      </div>
+      <div class="concept-card">
+        <div class="concept-card-label">Throughput Rate</div>
+        <p>How many customers the process can serve per unit of time — limited entirely by the bottleneck activity's capacity. All other steps could run at full capacity; if the bottleneck is constrained, the whole process is constrained.</p>
+      </div>
+      <div class="concept-card">
+        <div class="concept-card-label">Bottleneck</div>
+        <p>The activity with the <em>lowest capacity</em> (customers/hour). In a process with parallel servers at one step, that step's capacity is the sum of all parallel server capacities. The bottleneck is where demand exceeds, or comes closest to exceeding, capacity.</p>
+      </div>
+      <div class="concept-card">
+        <div class="concept-card-label">Pooled vs. Dedicated</div>
+        <p>Parallel servers can be <strong>pooled</strong> (any customer can go to any server — more efficient) or <strong>dedicated</strong> (each server handles a specific customer type). Pooling always equals or improves throughput because idle capacity at one server can be used by demand for another.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="topic-divider" aria-hidden="true"><span>section boundary</span></div>
+
+  <!-- ═══════════════ 02 SEQUENTIAL PROCESSES ═══════════════ -->
+  <section id="sequential" class="topic-section" aria-labelledby="h-sequential">
+    <div class="section-header">
+      <span class="section-number" aria-hidden="true">02</span>
+      <h2 id="h-sequential">
+        <span class="topic-tag">Process Type</span>
+        Sequential Processes
+      </h2>
+    </div>
+
+    <div class="concept-box">
+      <h3>Every Customer Follows the Same Path</h3>
+      <p>In a sequential process, every customer goes through every step in order. There are no branches. The flow time is simply the sum of all processing times. The bottleneck is the step with the highest processing time — which gives it the lowest capacity (customers per hour).</p>
+    </div>
+
+    <div class="example">
+      <div class="example-header">
+        <span class="ex-label">Worked Example — Sequential</span>
+        <span class="ex-title">Lakeview Car Wash</span>
+      </div>
+      <div class="example-body">
+        <p>A car wash has four sequential steps: <strong>Pre-rinse (3 min)</strong> → <strong>Soap &amp; scrub (7 min)</strong> → <strong>Final rinse (4 min)</strong> → <strong>Air dry (5 min)</strong>. Each step has exactly one machine.</p>
+
+        <!-- SVG process flow diagram -->
+        <div class="process-diagram" role="img" aria-label="Sequential process: Pre-rinse 3 min, Soap and scrub 7 min, Final rinse 4 min, Air dry 5 min, all connected in a line">
+          <svg viewBox="0 0 620 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <marker id="arr" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
+                <polygon points="0 0,8 3.5,0 7" fill="#7ba7c2" opacity="0.7"/>
+              </marker>
+            </defs>
+            <!-- arrows -->
+            <line x1="110" y1="50" x2="148" y2="50" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr)"/>
+            <line x1="260" y1="50" x2="298" y2="50" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr)"/>
+            <line x1="410" y1="50" x2="448" y2="50" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr)"/>
+            <!-- nodes -->
+            <rect x="10" y="22" width="100" height="56" rx="4" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.5"/>
+            <text x="60" y="46" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="600">Pre-rinse</text>
+            <text x="60" y="62" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="600">3 min</text>
+
+            <rect x="160" y="22" width="100" height="56" rx="4" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.5"/>
+            <text x="210" y="43" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="600">Soap &amp;</text>
+            <text x="210" y="56" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="600">scrub</text>
+            <text x="210" y="70" text-anchor="middle" fill="#ff9080" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="700">7 min ★</text>
+
+            <rect x="310" y="22" width="100" height="56" rx="4" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.5"/>
+            <text x="360" y="46" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="600">Final rinse</text>
+            <text x="360" y="62" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="600">4 min</text>
+
+            <rect x="460" y="22" width="100" height="56" rx="4" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.5"/>
+            <text x="510" y="46" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="600">Air dry</text>
+            <text x="510" y="62" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="600">5 min</text>
+
+            <text x="210" y="15" text-anchor="middle" fill="#ff9080" font-family="IBM Plex Mono,monospace" font-size="8.5" font-weight="600">★ BOTTLENECK</text>
+          </svg>
+        </div>
+
+        <ol class="steps">
+          <li><strong>Flow time</strong> (time one car spends in the process):
+            <pre class="calc-block" aria-label="3 plus 7 plus 4 plus 5 equals 19 minutes">Flow Time = 3 + 7 + 4 + 5 = <span class="result">19 minutes</span></pre>
+          </li>
+          <li><strong>Find capacity of each step</strong> (cars per hour = 60 ÷ processing time):
+            <pre class="calc-block" aria-label="Pre-rinse 20, Soap and scrub 8.57, Final rinse 15, Air dry 12 cars per hour">Pre-rinse:   60 ÷ 3  = 20.0 cars/hr
+Soap &amp; scrub: 60 ÷ 7  = <span class="result">8.6 cars/hr  ← lowest = bottleneck</span>
+Final rinse: 60 ÷ 4  = 15.0 cars/hr
+Air dry:     60 ÷ 5  = 12.0 cars/hr</pre>
+          </li>
+          <li><strong>Process throughput</strong> = bottleneck capacity:
+            <pre class="calc-block" aria-label="Throughput equals 8.6 cars per hour">Throughput = <span class="result">8.6 cars/hour</span>  (limited by Soap &amp; scrub)</pre>
+          </li>
+        </ol>
+
+        <div class="insight" role="note">
+          <span class="icon" aria-hidden="true">◆</span>
+          <p>Speeding up Pre-rinse from 3 min to 1 min would have <strong>zero effect</strong> on throughput. Only improvements to the bottleneck — Soap &amp; scrub — can increase how many cars the process handles per hour.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="topic-divider" aria-hidden="true"><span>section boundary</span></div>
+
+  <!-- ═══════════════ 03 PARALLEL RESOURCES ═══════════════ -->
+  <section id="parallel" class="topic-section" aria-labelledby="h-parallel">
+    <div class="section-header">
+      <span class="section-number" aria-hidden="true">03</span>
+      <h2 id="h-parallel">
+        <span class="topic-tag">Process Type</span>
+        Parallel Resources at a Step
+      </h2>
+    </div>
+
+    <div class="concept-box">
+      <h3>Multiple Servers at the Same Step</h3>
+      <p>When a step has multiple servers working in parallel, each serving different customers simultaneously, the <strong>capacity of that step multiplies</strong>. A step with 3 servers each taking 15 minutes has capacity 3 × (60 ÷ 15) = 12 customers/hour — not 4.</p>
+      <p>The bottleneck is still the step with the <em>lowest total capacity</em>. Parallel servers are one of the primary tools for relieving a bottleneck without changing individual processing times.</p>
+    </div>
+
+    <div class="formula-grid" role="list" aria-label="Parallel server formula">
+      <div class="formula-card" role="listitem">
+        <div class="label">Step with N parallel servers</div>
+        <div class="formula">Capacity = N × (60 ÷ Time per server)</div>
+      </div>
+      <div class="formula-card" role="listitem">
+        <div class="label">To find N needed</div>
+        <div class="formula">N ≥ Required Rate × (Time ÷ 60)</div>
+      </div>
+    </div>
+
+    <div class="example">
+      <div class="example-header">
+        <span class="ex-label">Worked Example — Parallel Servers</span>
+        <span class="ex-title">Northgate Urgent Care</span>
+      </div>
+      <div class="example-body">
+        <p>Patients flow through: <strong>Check-in (4 min, 1 clerk)</strong> → <strong>Nurse triage (10 min, 2 nurses)</strong> → <strong>Doctor exam (20 min, 3 doctors)</strong> → <strong>Checkout (3 min, 1 clerk)</strong>.</p>
+
+        <div class="process-diagram" role="img" aria-label="Urgent care process with parallel servers noted at each step">
+          <svg viewBox="0 0 680 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <marker id="arr2" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
+                <polygon points="0 0,8 3.5,0 7" fill="#7ba7c2" opacity="0.7"/>
+              </marker>
+            </defs>
+            <line x1="110" y1="55" x2="148" y2="55" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr2)"/>
+            <line x1="270" y1="55" x2="308" y2="55" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr2)"/>
+            <line x1="430" y1="55" x2="468" y2="55" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr2)"/>
+
+            <rect x="10" y="27" width="100" height="56" rx="4" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.5"/>
+            <text x="60" y="51" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="600">Check-in</text>
+            <text x="60" y="64" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="10">4 min</text>
+            <text x="60" y="76" text-anchor="middle" fill="#6ddba0" font-family="IBM Plex Mono,monospace" font-size="9">×1 clerk</text>
+
+            <rect x="160" y="27" width="110" height="56" rx="4" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.5"/>
+            <text x="215" y="51" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="600">Triage</text>
+            <text x="215" y="64" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="10">10 min</text>
+            <text x="215" y="76" text-anchor="middle" fill="#6ddba0" font-family="IBM Plex Mono,monospace" font-size="9">×2 nurses</text>
+
+            <rect x="320" y="27" width="110" height="56" rx="4" fill="#122236" stroke="#ff9080" stroke-width="2"/>
+            <text x="375" y="48" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="600">Doctor</text>
+            <text x="375" y="61" text-anchor="middle" fill="#ff9080" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="700">20 min</text>
+            <text x="375" y="74" text-anchor="middle" fill="#6ddba0" font-family="IBM Plex Mono,monospace" font-size="9">×3 doctors</text>
+            <text x="375" y="20" text-anchor="middle" fill="#ff9080" font-family="IBM Plex Mono,monospace" font-size="8.5" font-weight="600">★ BOTTLENECK</text>
+
+            <rect x="480" y="27" width="100" height="56" rx="4" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.5"/>
+            <text x="530" y="51" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="600">Checkout</text>
+            <text x="530" y="64" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="10">3 min</text>
+            <text x="530" y="76" text-anchor="middle" fill="#6ddba0" font-family="IBM Plex Mono,monospace" font-size="9">×1 clerk</text>
+          </svg>
+        </div>
+
+        <ol class="steps">
+          <li><strong>Convert each step to capacity (customers/hour), accounting for parallel servers:</strong>
+            <pre class="calc-block" aria-label="Check-in 15, Triage 12, Doctor 9, Checkout 20 customers per hour">Check-in:  1 × (60 ÷  4) = 1 × 15.0 = <span class="result">15.0 patients/hr</span>
+Triage:    2 × (60 ÷ 10) = 2 ×  6.0 = <span class="result">12.0 patients/hr</span>
+Doctor:    3 × (60 ÷ 20) = 3 ×  3.0 = <span class="result"> 9.0 patients/hr  ← bottleneck</span>
+Checkout:  1 × (60 ÷  3) = 1 × 20.0 = <span class="result">20.0 patients/hr</span></pre>
+          </li>
+          <li><strong>Flow time</strong> (one path through the process):
+            <pre class="calc-block" aria-label="4 plus 10 plus 20 plus 3 equals 37 minutes">Flow Time = 4 + 10 + 20 + 3 = <span class="result">37 minutes</span></pre>
+          </li>
+          <li><strong>Throughput</strong> = bottleneck capacity:
+            <pre class="calc-block" aria-label="9 patients per hour">Throughput = <span class="result">9 patients/hour</span>  (limited by Doctor step)</pre>
+          </li>
+        </ol>
+
+        <div class="warning" role="note">
+          <span class="icon" aria-hidden="true">⚠</span>
+          <p><strong>Common error:</strong> Students often compute 3 doctors × 20 min = 60 min and conclude throughput is 1 patient/hour. That's the capacity of one doctor, not the step. Always multiply: 3 × (60 ÷ 20) = 9 patients/hour.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="topic-divider" aria-hidden="true"><span>section boundary</span></div>
+
+  <!-- ═══════════════ 04 DIVERGING PATHS ═══════════════ -->
+  <section id="diverging" class="topic-section" aria-labelledby="h-diverging">
+    <div class="section-header">
+      <span class="section-number" aria-hidden="true">04</span>
+      <h2 id="h-diverging">
+        <span class="topic-tag">Process Type</span>
+        Diverging Paths &amp; Customer Types
+      </h2>
+    </div>
+
+    <div class="concept-box">
+      <h3>Different Customers, Different Routes</h3>
+      <p>Many real processes split after a shared entry point. Some steps are shared by all customers; others are used only by specific customer types. When paths diverge, you must track <strong>each customer type's flow time separately</strong> (their unique path, start to finish) but identify the bottleneck across the <strong>whole process</strong>.</p>
+      <p>For shared steps with parallel dedicated servers (one server per customer type), the capacity calculation treats each server independently for its assigned customer stream — unless the servers are pooled.</p>
+    </div>
+
+    <div class="formula-grid" role="list" aria-label="Diverging path formulas">
+      <div class="formula-card" role="listitem">
+        <div class="label">Flow Time (by type)</div>
+        <div class="formula">Sum times on that customer's specific path only</div>
+      </div>
+      <div class="formula-card" role="listitem">
+        <div class="label">Shared step capacity</div>
+        <div class="formula">Cap = Total servers at step × (60 ÷ Time)</div>
+      </div>
+      <div class="formula-card" role="listitem">
+        <div class="label">Bottleneck (whole process)</div>
+        <div class="formula">Lowest capacity step across all paths</div>
+      </div>
+    </div>
+
+    <div class="example">
+      <div class="example-header">
+        <span class="ex-label">Worked Example — Diverging Paths</span>
+        <span class="ex-title">Horizon Tax Filing Service</span>
+      </div>
+      <div class="example-body">
+        <p>All clients start at <strong>Intake (5 min, 1 clerk)</strong>. Then they split: <strong>Simple returns</strong> go to an <strong>Associate (12 min)</strong>; <strong>Complex returns</strong> go to a <strong>Senior Advisor (25 min)</strong>. Both paths end at <strong>Document Sign-off (4 min, 1 clerk)</strong>. There is 1 Associate and 1 Senior Advisor. Assume equal mix of Simple and Complex.</p>
+
+        <!-- Diverging path SVG -->
+        <div class="process-diagram" role="img" aria-label="Tax service process: Intake feeds into two parallel paths — Associate for simple returns and Senior Advisor for complex returns — both merge into Document Sign-off">
+          <svg viewBox="0 0 660 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <marker id="arr3" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
+                <polygon points="0 0,8 3.5,0 7" fill="#7ba7c2" opacity="0.7"/>
+              </marker>
+              <marker id="arr3c" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
+                <polygon points="0 0,8 3.5,0 7" fill="#f5c060"/>
+              </marker>
+            </defs>
+            <!-- Intake -->
+            <rect x="10" y="62" width="110" height="56" rx="4" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.6"/>
+            <text x="65" y="86" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="600">Intake</text>
+            <text x="65" y="99" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="10">5 min</text>
+            <text x="65" y="111" text-anchor="middle" fill="#6ddba0" font-family="IBM Plex Mono,monospace" font-size="9">×1 clerk</text>
+
+            <!-- fork lines -->
+            <line x1="120" y1="90" x2="155" y2="90" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7"/>
+            <line x1="155" y1="40" x2="155" y2="140" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.4"/>
+            <line x1="155" y1="40" x2="190" y2="40" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr3)"/>
+            <line x1="155" y1="140" x2="190" y2="140" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr3)"/>
+
+            <!-- Associate (simple) -->
+            <rect x="200" y="14" width="120" height="52" rx="4" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.6"/>
+            <text x="260" y="35" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="600">Associate</text>
+            <text x="260" y="48" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="10">12 min</text>
+            <text x="260" y="60" text-anchor="middle" fill="#6ddba0" font-family="IBM Plex Mono,monospace" font-size="9">Simple returns</text>
+
+            <!-- Senior Advisor (complex) — bottleneck -->
+            <rect x="200" y="114" width="120" height="52" rx="4" fill="#122236" stroke="#ff9080" stroke-width="2"/>
+            <text x="260" y="132" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="9.5" font-weight="600">Sr. Advisor</text>
+            <text x="260" y="145" text-anchor="middle" fill="#ff9080" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="700">25 min ★</text>
+            <text x="260" y="158" text-anchor="middle" fill="#6ddba0" font-family="IBM Plex Mono,monospace" font-size="9">Complex returns</text>
+
+            <!-- merge lines -->
+            <line x1="320" y1="40" x2="355" y2="40" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7"/>
+            <line x1="320" y1="140" x2="355" y2="140" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7"/>
+            <line x1="355" y1="40" x2="355" y2="140" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.4"/>
+            <line x1="355" y1="90" x2="390" y2="90" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr3)"/>
+
+            <!-- Sign-off -->
+            <rect x="400" y="62" width="120" height="56" rx="4" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.6"/>
+            <text x="460" y="84" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="9.5" font-weight="600">Sign-off</text>
+            <text x="460" y="97" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="10">4 min</text>
+            <text x="460" y="109" text-anchor="middle" fill="#6ddba0" font-family="IBM Plex Mono,monospace" font-size="9">×1 clerk</text>
+
+            <text x="260" y="107" text-anchor="middle" fill="#ff9080" font-family="IBM Plex Mono,monospace" font-size="8" font-weight="600">★ BOTTLENECK</text>
+          </svg>
+        </div>
+
+        <ol class="steps">
+          <li><strong>Flow time — Simple return path:</strong>
+            <pre class="calc-block" aria-label="5 plus 12 plus 4 equals 21 minutes">Intake + Associate + Sign-off = 5 + 12 + 4 = <span class="result">21 minutes</span></pre>
+          </li>
+          <li><strong>Flow time — Complex return path:</strong>
+            <pre class="calc-block" aria-label="5 plus 25 plus 4 equals 34 minutes">Intake + Sr. Advisor + Sign-off = 5 + 25 + 4 = <span class="result">34 minutes</span></pre>
+          </li>
+          <li><strong>Capacity at each step</strong> (equal 50/50 customer mix — shared steps serve both types):
+            <pre class="calc-block" aria-label="Intake 12, Associate 5, Senior Advisor 2.4, Sign-off 15 customers per hour">Intake:      1 × (60 ÷  5) = <span class="result">12.0 clients/hr</span>  (all clients)
+Associate:   1 × (60 ÷ 12) = <span class="result"> 5.0 simple/hr</span>
+Sr. Advisor: 1 × (60 ÷ 25) = <span class="result"> 2.4 complex/hr  ← bottleneck</span>
+Sign-off:    1 × (60 ÷  4) = <span class="result">15.0 clients/hr</span>  (all clients)</pre>
+          </li>
+          <li><strong>Process throughput</strong> is constrained by the Senior Advisor:
+            <pre class="calc-block" aria-label="Max 2.4 complex returns per hour, matching 2.4 simple returns per hour equals 4.8 total clients per hour">Complex throughput: <span class="result">2.4/hr</span>
+Matching simple:    <span class="result">2.4/hr</span>  (equal mix)
+Total throughput:   <span class="result">4.8 clients/hr</span></pre>
+          </li>
+        </ol>
+
+        <div class="insight" role="note">
+          <span class="icon" aria-hidden="true">◆</span>
+          <p><strong>When paths diverge, the bottleneck constrains its entire stream.</strong> Here the Senior Advisor limits complex returns to 2.4/hr. With an equal-mix constraint, this caps total throughput at 4.8/hr even though Intake could handle 12/hr and Sign-off could handle 15/hr.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="topic-divider" aria-hidden="true"><span>section boundary</span></div>
+
+  <!-- ═══════════════ 05 TEXTBOOK EXAMPLES ═══════════════ -->
+  <section id="examples" class="topic-section" aria-labelledby="h-examples">
+    <div class="section-header">
+      <span class="section-number" aria-hidden="true">05</span>
+      <h2 id="h-examples">
+        <span class="topic-tag">Textbook Problems</span>
+        Worked Examples
+      </h2>
+    </div>
+
+    <!-- BILL'S BARBERSHOP -->
+    <div class="example">
+      <div class="example-header">
+        <span class="ex-label">Problem Type: Parallel Servers at One Step</span>
+        <span class="ex-title">Bill's Barbershop (Fig. 7.9)</span>
+      </div>
+      <div class="example-body">
+        <p>All customers pass through <strong>B1 (10 min)</strong> then <strong>B2 (8 min)</strong>. Then they are served by <em>either</em> <strong>B3-a (15 min)</strong> or <strong>B3-b (10 min)</strong> — two parallel barbers. Finally all go through <strong>B4 (9 min)</strong>.</p>
+
+        <div class="process-diagram" role="img" aria-label="Barbershop process: B1 10 min to B2 8 min, then splits to B3-a 15 min or B3-b 10 min, both merge to B4 9 min">
+          <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <marker id="arr4" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
+                <polygon points="0 0,8 3.5,0 7" fill="#7ba7c2" opacity="0.7"/>
+              </marker>
+            </defs>
+            <!-- B1 -->
+            <circle cx="60" cy="80" r="35" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.6"/>
+            <text x="60" y="76" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="600">B1</text>
+            <text x="60" y="91" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="10">(10)</text>
+            <!-- arrow B1→B2 -->
+            <line x1="95" y1="80" x2="133" y2="80" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr4)"/>
+            <!-- B2 -->
+            <circle cx="168" cy="80" r="35" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.6"/>
+            <text x="168" y="76" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="600">B2</text>
+            <text x="168" y="91" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="10">(8)</text>
+            <!-- fork -->
+            <line x1="203" y1="80" x2="240" y2="80" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7"/>
+            <line x1="240" y1="38" x2="240" y2="122" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.4"/>
+            <line x1="240" y1="38" x2="278" y2="38" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr4)"/>
+            <line x1="240" y1="122" x2="278" y2="122" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr4)"/>
+            <!-- B3-a -->
+            <circle cx="318" cy="38" r="35" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.6"/>
+            <text x="318" y="33" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="600">B3-a</text>
+            <text x="318" y="47" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="10">(15)</text>
+            <!-- B3-b -->
+            <circle cx="318" cy="122" r="35" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.6"/>
+            <text x="318" y="117" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="600">B3-b</text>
+            <text x="318" y="131" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="10">(10)</text>
+            <!-- merge -->
+            <line x1="353" y1="38" x2="390" y2="38" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7"/>
+            <line x1="353" y1="122" x2="390" y2="122" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7"/>
+            <line x1="390" y1="38" x2="390" y2="122" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.4"/>
+            <line x1="390" y1="80" x2="428" y2="80" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr4)"/>
+            <!-- B4 — bottleneck -->
+            <circle cx="468" cy="80" r="35" fill="#122236" stroke="#ff9080" stroke-width="2.2"/>
+            <text x="468" y="75" text-anchor="middle" fill="#ff9080" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="700">B4</text>
+            <text x="468" y="90" text-anchor="middle" fill="#ff9080" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="700">(9) ★</text>
+            <text x="468" y="20" text-anchor="middle" fill="#ff9080" font-family="IBM Plex Mono,monospace" font-size="8.5" font-weight="600">★ BOTTLENECK</text>
+          </svg>
+        </div>
+
+        <ol class="steps">
+          <li><strong>Flow time</strong> — there are two possible paths. The <em>average</em> customer time uses the average time at B3:
+            <pre class="calc-block" aria-label="Average B3 time is 15 plus 10 divided by 2 equals 12.5 minutes. Flow time is 10 plus 8 plus 12.5 plus 9 equals 39.5 minutes">Avg B3 time = (15 + 10) ÷ 2 = 12.5 min
+Flow Time   = B1 + B2 + avg(B3) + B4
+            = 10 + 8 + 12.5 + 9 = <span class="result">39.5 minutes</span></pre>
+          </li>
+          <li><strong>Capacity at each step:</strong>
+            <pre class="calc-block" aria-label="B1 6, B2 7.5, B3 combined 10, B4 6.67 customers per hour">B1:  1 server × (60 ÷ 10)  = <span class="result"> 6.0 customers/hr</span>
+B2:  1 server × (60 ÷  8)  = <span class="result"> 7.5 customers/hr</span>
+B3:  2 servers — but different speeds, calculate total:
+     (60÷15) + (60÷10) = 4.0 + 6.0 = <span class="result">10.0 customers/hr</span>
+B4:  1 server × (60 ÷  9)  = <span class="result"> 6.7 customers/hr  ← bottleneck</span></pre>
+          </li>
+          <li><strong>Bottleneck</strong> is <strong>B4</strong> at 6.7 customers/hr — not B3 (which is the most complex step visually), not B1 (slowest individual server).
+            <pre class="calc-block" aria-label="Process throughput equals 6.7 customers per hour">Process throughput = <span class="result">6.7 customers/hour</span>  (~6–7 customers/hr)</pre>
+          </li>
+        </ol>
+
+        <div class="insight" role="note">
+          <span class="icon" aria-hidden="true">◆</span>
+          <p><strong>B3 has two servers with different speeds.</strong> Don't average them or treat them as one. Add their individual capacities: 4.0 + 6.0 = 10.0 customers/hr. This is much higher than B4's 6.7/hr, which is why B4 is the actual bottleneck despite being a single step with a reasonable processing time.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- MELISSA'S PHOTO STUDIO -->
+    <div class="example">
+      <div class="example-header">
+        <span class="ex-label">Problem Type: Diverging Paths + Parallel Cashiers</span>
+        <span class="ex-title">Melissa's Photo Studio (Fig. 7.10)</span>
+      </div>
+      <div class="example-body">
+        <p>All customers: <strong>Registration (5 min)</strong>. Then pay at either <strong>Cashier A (5 min)</strong> or <strong>Cashier B (7 min)</strong> — pooled, any customer may use either. Then split: <strong>Individual portrait (15 min)</strong> or <strong>Group portrait (20 min)</strong>. All end at <strong>Pick up portrait (7 min)</strong>. Equal mix of individual and group.</p>
+
+        <div class="process-diagram" role="img" aria-label="Photo studio: Registration to pooled cashiers A and B, then split to Individual or Group portrait, then all to Pick up portrait">
+          <svg viewBox="0 0 720 170" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <marker id="arr5" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
+                <polygon points="0 0,8 3.5,0 7" fill="#7ba7c2" opacity="0.7"/>
+              </marker>
+            </defs>
+            <!-- Registration -->
+            <rect x="5" y="65" width="95" height="50" rx="4" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.6"/>
+            <text x="52" y="87" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="9.5" font-weight="600">Registration</text>
+            <text x="52" y="101" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="10">5 min</text>
+            <line x1="100" y1="90" x2="118" y2="90" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7"/>
+            <line x1="118" y1="45" x2="118" y2="135" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.4"/>
+            <line x1="118" y1="45" x2="138" y2="45" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr5)"/>
+            <line x1="118" y1="135" x2="138" y2="135" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr5)"/>
+            <!-- Cashier A -->
+            <rect x="148" y="22" width="95" height="46" rx="4" fill="#1a3049" stroke="#b8cfe0" stroke-width="1.5" stroke-opacity="0.5"/>
+            <text x="195" y="42" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="9.5" font-weight="600">Cashier A</text>
+            <text x="195" y="56" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="10">5 min</text>
+            <!-- Cashier B -->
+            <rect x="148" y="112" width="95" height="46" rx="4" fill="#1a3049" stroke="#b8cfe0" stroke-width="1.5" stroke-opacity="0.5"/>
+            <text x="195" y="132" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="9.5" font-weight="600">Cashier B</text>
+            <text x="195" y="146" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="10">7 min</text>
+            <!-- cashier label -->
+            <text x="195" y="12" text-anchor="middle" fill="#6ddba0" font-family="IBM Plex Mono,monospace" font-size="8" font-weight="500">POOLED</text>
+            <!-- merge cashiers -->
+            <line x1="243" y1="45" x2="278" y2="45" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7"/>
+            <line x1="243" y1="135" x2="278" y2="135" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7"/>
+            <line x1="278" y1="45" x2="278" y2="135" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.4"/>
+            <line x1="278" y1="90" x2="298" y2="90" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7"/>
+            <!-- fork to portraits -->
+            <line x1="298" y1="45" x2="298" y2="135" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.4"/>
+            <line x1="298" y1="45" x2="318" y2="45" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr5)"/>
+            <line x1="298" y1="135" x2="318" y2="135" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr5)"/>
+            <!-- Individual portrait -->
+            <rect x="328" y="22" width="115" height="46" rx="4" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.6"/>
+            <text x="385" y="42" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="9" font-weight="600">Individual</text>
+            <text x="385" y="56" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="10">15 min</text>
+            <!-- Group portrait — bottleneck -->
+            <rect x="328" y="112" width="115" height="46" rx="4" fill="#122236" stroke="#ff9080" stroke-width="2"/>
+            <text x="385" y="132" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="9" font-weight="600">Group</text>
+            <text x="385" y="146" text-anchor="middle" fill="#ff9080" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="700">20 min ★</text>
+            <text x="385" y="170" text-anchor="middle" fill="#ff9080" font-family="IBM Plex Mono,monospace" font-size="8" font-weight="600">★ BOTTLENECK</text>
+            <!-- merge portraits -->
+            <line x1="443" y1="45" x2="478" y2="45" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7"/>
+            <line x1="443" y1="135" x2="478" y2="135" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7"/>
+            <line x1="478" y1="45" x2="478" y2="135" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.4"/>
+            <line x1="478" y1="90" x2="498" y2="90" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.7" marker-end="url(#arr5)"/>
+            <!-- Pick up -->
+            <rect x="508" y="65" width="105" height="50" rx="4" fill="#122236" stroke="#7ba7c2" stroke-width="1.5" stroke-opacity="0.6"/>
+            <text x="560" y="87" text-anchor="middle" fill="#b8cfe0" font-family="IBM Plex Mono,monospace" font-size="9.5" font-weight="600">Pick up</text>
+            <text x="560" y="101" text-anchor="middle" fill="#f5c060" font-family="IBM Plex Mono,monospace" font-size="10">7 min</text>
+          </svg>
+        </div>
+
+        <ol class="steps">
+          <li><strong>Flow time — Group portrait path:</strong>
+            <pre class="calc-block" aria-label="Registration 5, average cashier time, Group portrait 20, Pick up 7">Avg cashier time = (5 + 7) ÷ 2 = 6 min  (pooled, average)
+Group flow time  = 5 + 6 + 20 + 7 = <span class="result">38 minutes</span></pre>
+          </li>
+          <li><strong>Capacity at each step</strong> (equal individual/group mix):
+            <pre class="calc-block" aria-label="Registration 12, Cashiers pooled 16.6, Individual 4, Group 3, Pick up 8.57 per hour">Registration: 1 × (60÷5)  = <span class="result">12.0/hr</span>
+Cashiers:  (60÷5)+(60÷7) = 12.0 + 8.6 = <span class="result">20.6/hr</span>  (pooled total)
+Individual:   1 × (60÷15) = <span class="result"> 4.0 individuals/hr</span>
+Group:        1 × (60÷20) = <span class="result"> 3.0 groups/hr  ← bottleneck</span>
+Pick up:      1 × (60÷7)  = <span class="result"> 8.6/hr</span></pre>
+          </li>
+          <li><strong>Bottleneck</strong> is the <strong>Group portrait step</strong> at 3.0/hr.
+            <pre class="calc-block" aria-label="Group bottleneck capacity 3 per hour. With equal mix, individual also capped at 3. Total throughput 6 customers per hour.">Group capacity:  <span class="result">3.0/hr</span>
+Matching indiv:  <span class="result">3.0/hr</span>  (equal mix)
+Total throughput: <span class="result">6.0 customers/hr</span></pre>
+          </li>
+          <li><strong>Bottleneck capacity for each type:</strong>
+            <pre class="calc-block" aria-label="Individual bottleneck: Registration at 12, half goes to each portrait type, so 6 individuals per hour available but group caps combined flow. Group bottleneck: 3 per hour">Individual stream bottleneck: <span class="result">4.0/hr</span>  (Individual portrait step)
+Group stream bottleneck:      <span class="result">3.0/hr</span>  (Group portrait step)
+Overall process bottleneck:   <span class="result">Group portrait, 3.0/hr</span></pre>
+          </li>
+        </ol>
+
+        <div class="insight" role="note">
+          <span class="icon" aria-hidden="true">◆</span>
+          <p><strong>Pooled cashiers vs. dedicated portrait rooms.</strong> The cashiers are pooled — both serve all customers — so their combined capacity is 20.6/hr, which is not the bottleneck. The portrait rooms are dedicated (one per type), so each is constrained by its own processing time independently. Group portrait is the binding constraint for the whole system.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="topic-divider" aria-hidden="true"><span>section boundary</span></div>
+
+  <!-- ═══════════════ 06 FORMULA PRACTICE QUIZ ═══════════════ -->
+  <section id="quiz" class="topic-section" aria-labelledby="h-quiz">
+    <div class="section-header">
+      <span class="section-number" aria-hidden="true">06</span>
+      <h2 id="h-quiz">
+        <span class="topic-tag">Practice Tool</span>
+        Formula Memory Aid
+      </h2>
+    </div>
+
+    <div class="concept-box">
+      <h3>No Formula Sheet Allowed</h3>
+      <p>This tool drills the formulas and decision rules for bottleneck analysis. Questions cycle through multiple choice, fill-in-the-blank, and scenario identification. Your score resets each session. Aim for 100% before the exam.</p>
+    </div>
+
+    <!-- QUIZ CONTAINER -->
+    <div class="quiz-container" id="quiz-container" aria-live="polite" aria-atomic="false">
+
+      <div class="quiz-scoreboard" id="quiz-scoreboard" aria-label="Quiz score">
+        <div class="score-item">
+          <span class="score-label">Score</span>
+          <span class="score-value" id="score-correct">0</span>
+        </div>
+        <div class="score-divider" aria-hidden="true">/</div>
+        <div class="score-item">
+          <span class="score-label">Attempted</span>
+          <span class="score-value" id="score-attempted">0</span>
+        </div>
+        <div class="score-divider" aria-hidden="true">·</div>
+        <div class="score-item">
+          <span class="score-label">Streak</span>
+          <span class="score-value" id="score-streak">0</span>
+        </div>
+        <button class="quiz-reset-btn" id="quiz-reset" aria-label="Reset quiz and shuffle questions">↺ Reset</button>
+      </div>
+
+      <div class="quiz-card" id="quiz-card">
+        <div class="quiz-progress" id="quiz-progress" aria-label="Question progress">
+          <span id="q-num">—</span>
+          <div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progress through question set">
+            <div class="progress-bar-fill" id="progress-fill"></div>
+          </div>
+          <span id="q-total">—</span>
+        </div>
+
+        <p class="quiz-type-badge" id="quiz-type-badge" aria-label="Question type">—</p>
+        <p class="quiz-question" id="quiz-question">Loading questions…</p>
+
+        <!-- Multiple choice options -->
+        <div class="quiz-options" id="quiz-options" role="group" aria-labelledby="quiz-question">
+        </div>
+
+        <!-- Fill-in-the-blank input -->
+        <div class="quiz-fill" id="quiz-fill" hidden>
+          <label class="quiz-fill-label" for="quiz-input" id="quiz-fill-label">Your answer:</label>
+          <div class="quiz-fill-row">
+            <input type="text" id="quiz-input" class="quiz-input" autocomplete="off" autocorrect="off" spellcheck="false" aria-describedby="quiz-fill-hint"/>
+            <button class="quiz-submit-btn" id="quiz-submit">Check</button>
+          </div>
+          <p class="quiz-fill-hint" id="quiz-fill-hint"></p>
+        </div>
+
+        <!-- Feedback -->
+        <div class="quiz-feedback" id="quiz-feedback" hidden role="status" aria-live="polite">
+          <p class="feedback-verdict" id="feedback-verdict"></p>
+          <p class="feedback-explain" id="feedback-explain"></p>
+          <button class="quiz-next-btn" id="quiz-next">Next Question →</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrapper">
+    <p>OPERATIONS MANAGEMENT &middot; CH. 7 FIELD GUIDE &middot; FOR EDUCATIONAL USE</p>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+<script src="quiz.js"></script>
+</body>
+</html>
